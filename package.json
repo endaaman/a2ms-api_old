@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "pm2 start bootstrap.js --watch --node-args \"--harmony\" --name a2ms-api",
+    "up": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api"
+  },
+  "dependencies": {
+    "bcrypt": "^0.8.5",
+    "co": "^4.6.0",
+    "coffee-script": "^1.9.3",
+    "jsonwebtoken": "^5.0.4",
+    "koa": "^0.21.0",
+    "koa-bodyparser": "^2.0.1",
+    "koa-compose": "^2.3.0",
+    "koa-cors": "0.0.16",
+    "koa-json": "^1.1.1",
+    "koa-logger": "^1.3.0",
+    "koa-response-time": "^1.0.2",
+    "koa-router": "^5.1.2",
+    "lodash": "^3.10.1",
+    "mecab-async": "^0.1.0",
+    "monk": "^1.0.1",
+    "q": "^1.4.1"
+  }
+}
