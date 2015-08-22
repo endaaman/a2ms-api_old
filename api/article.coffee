@@ -5,7 +5,7 @@ auth = require '../lib/auth'
 config = require '../config'
 
 db = monk config.db
-memos = db.get 'articles'
+articles = db.get 'articles'
 
 router = do require 'koa-router'
 
@@ -16,6 +16,7 @@ router = do require 'koa-router'
     title_en: title in English
     content_ja: content in Japanese
     content_en: content in English
+    tass: list of related tag ids
 
     created_at: Date when created
     updated_at: Date when updated
@@ -24,7 +25,10 @@ router = do require 'koa-router'
 
 
 router.get '/', (next)->
-    docs = yield memos.find {},
+    query = {}
+    if @params.title
+        query.title = @params.title
+    docs = yield articles.find query,
         fields: ['-content_ja', '-content_en']
         sort:
             created_at: -1
@@ -33,16 +37,21 @@ router.get '/', (next)->
 
 
 router.post '/', auth, (next)->
-    memo = _.clone @request.body
-    memo.created_at = new Date
-    memo.updated_at = memo.created_at
-    doc = yield memos.insert memo
+    article = _.clone @request.body
+    article.created_at = new Date
+    article.updated_at = article.created_at
+    doc = yield articles.insert article
     @body = doc
+    @status = 201
     yield next
 
 
-router.get '/:title', (next)->
-    doc = yield memos.findOne title: @params.title
+router.get '/:id', (next)->
+    if /^[0-9a-fA-F]{24}$/.test @params.id
+        doc = yield articles.findById @params.id
+    else
+        doc = yield articles.findOne slug: @params.id
+
     if not doc
         @status = 404
         return
@@ -52,18 +61,18 @@ router.get '/:title', (next)->
 
 
 router.put '/:id', auth, (next)->
-    memo = _.clone @request.body
-    if memo.created_at
-        delete memo.created_at
-    memo.updated_at = new Date
-    yield memos.updateById @params.id, $set: memo
-    @body = memo
+    article = _.clone @request.body
+    if article.created_at
+        delete article.created_at
+    article.updated_at = new Date
+    yield articles.updateById @params.id, $set: article
+    @body = article
     yield next
 
 
 router.delete '/:id', auth, (next)->
-    yield memos.remove _id: @params.id
-    @body = ''
+    yield articles.remove _id: @params.id
+    @status = 204
     yield next
 
 
