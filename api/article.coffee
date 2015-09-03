@@ -1,58 +1,71 @@
 _ = require 'lodash'
-monk = require 'monk'
+mongoose = require 'mongoose'
 
-auth = require '../lib/auth'
+auth = (require '../lib/auth') true
+user = (require '../lib/auth') false
 config = require '../config'
 
-db = monk config.db
-articles = db.get 'articles'
+Article = mongoose.model 'Article'
 
 router = do require 'koa-router'
 
-###* Schema
-    _id: ObjectID()
-    slug: url
-    title_ja: title in Japanese
-    title_en: title in English
-    content_ja: content in Japanese
-    content_en: content in English
-    tass: list of related tag ids
-
-    created_at: Date when created
-    updated_at: Date when updated
-
-###
-
-
-router.get '/', (next)->
+router.get '/', user, (next)->
     query = {}
-    if @params.title
-        query.title = @params.title
-    docs = yield articles.find query,
-        fields: ['-content_ja', '-content_en']
-        sort:
-            created_at: -1
-    @body = docs
+    if @query.tag
+        query.tags = @query.tag
+
+    if not @user?.approved
+        query.draft = false
+
+
+    if @query.category
+        if @query.category is 'null'
+            query.category = null
+        else
+            query.category = @query.category
+
+    if @query.hasOwnProperty 'with_content'
+        fields = ''
+    else
+        fields = '-content_ja -content_en'
+
+    opt =
+        created_at: -1
+
+    if limit = Number @query.limit
+        opt.limit = limit
+    if skip = Number @query.skip
+        opt.skip = skip
+
+    q = Article.find query, fields, opt
+    @body = yield q.exec()
     yield next
 
 
 router.post '/', auth, (next)->
-    article = _.clone @request.body
+    article = new Article @request.body
     article.created_at = new Date
     article.updated_at = article.created_at
-    doc = yield articles.insert article
-    @body = doc
-    @status = 201
+    try
+        @body = yield article.save()
+        @status = 201
+    catch err
+        @body = err
+        @status = 422
     yield next
 
 
-router.get '/:id', (next)->
+router.get '/:id', user, (next)->
     if /^[0-9a-fA-F]{24}$/.test @params.id
-        doc = yield articles.findById @params.id
+        doc = yield Article.findById @params.id
     else
-        doc = yield articles.findOne slug: @params.id
+        doc = yield Article.findOne slug: @params.id
 
     if not doc
+        @status = 404
+        return
+
+    if doc.draft and not @user?.approved
         @status = 404
         return
 
@@ -60,18 +73,27 @@ router.get '/:id', (next)->
     yield next
 
 
-router.put '/:id', auth, (next)->
-    article = _.clone @request.body
-    if article.created_at
-        delete article.created_at
-    article.updated_at = new Date
-    yield articles.updateById @params.id, $set: article
-    @body = article
+router.patch '/:id', auth, (next)->
+    doc = yield Article.findById @params.id
+    if not doc
+        @status = 404
+        return
+    base = _.clone @request.body
+    delete base.created_at
+    base.updated_at = new Date
+    _.assign doc, base
+
+    try
+        @body = yield doc.save()
+        @status = 200
+    catch err
+        @body = err
+        @status = 422
     yield next
 
 
 router.delete '/:id', auth, (next)->
-    yield articles.remove _id: @params.id
+    yield Article.findByIdAndRemove @params.id
     @status = 204
     yield next
 

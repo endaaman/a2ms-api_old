@@ -2,15 +2,6 @@ path = require 'path'
 
 prod = process.env.NODE_ENV is 'production'
 
-basePath = ->
-    '/api'
-
-port = ->
-    3000
-
-uploadDir = ->
-    '/var/uploaded/enda'
-
 secret = ->
     if not process.env.SECRET
         console.warn 'secret was set dengerous key'
@@ -18,8 +9,9 @@ secret = ->
 
 
 module.exports =
-    basePath: basePath()
-    port: port()
-    uploadDir: uploadDir()
+    uploadDir: '/var/uploaded/a2ms'
+    basePath: '/api'
+    port: 3000
+    portSeo: 3001
     secret: secret()
-    db: 'localhost:27017/a2ms'
+    db: 'mongodb://localhost:27017/a2ms'

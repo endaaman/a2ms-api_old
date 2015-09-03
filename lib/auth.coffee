@@ -6,37 +6,51 @@ config = require '../config'
 
 jwtVerify = Q.nbind jwt.verify, jwt
 
-module.exports = (next)->
-    # Header style
-    #   Authorization: Bearer TOKEN_STRING
+module.exports = (restricted)->
+    (next)->
+        # Header style
+        #   Authorization: Bearer TOKEN_STRING
+        @user = null
+        authStyle = 'Bearer'
 
-    authStyle = 'Bearer'
+        abort = (next)->
+            if restricted
+                @status = 401
 
-    @token = {}
+        if not @request.header.authorization?
+            if restricted
+                @throw 401
+            else
+                yield next
+                return
 
-    if not @request.header.authorization?
-        @throw 401
-        return
+        parts = @request.header.authorization.split ' '
+        validTokenStyle = parts.length is 2 and parts[0] is authStyle
 
-    parts = @request.header.authorization.split ' '
-    validTokenStyle = parts.length is 2 and parts[0] is authStyle
+        if not validTokenStyle
+            if restricted
+                @throw 401
+            else
+                yield next
+                return
 
-    if not validTokenStyle
-        @throw 401
-        return
+        token = parts[1]
+        try
+            decoded = yield jwtVerify token, config.secret
+        catch
+            if restricted
+                @throw 401
+            else
+                yield next
+                return
 
-    token = parts[1]
+        if not decoded.approved
+            if restricted
+                @throw 401
+            else
+                yield next
+                return
 
-    decoded = yield jwtVerify token, config.secret
-    .fail (e)=>
-        @throw 401
-        return
+        @user =  (_.pick decoded, ['_id', 'username', 'approved'])
 
-
-    if not decoded.approved
-        @throw 401
-        return
-
-    @user =  (_.pick decoded, ['_id', 'username', 'approved'])
-
-    yield next
+        yield next

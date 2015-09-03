@@ -2,14 +2,13 @@ _ = require 'lodash'
 Q = require 'q'
 bcrypt = require 'bcrypt'
 jwt = require 'jsonwebtoken'
-monk = require 'monk'
+mongoose = require 'mongoose'
 
-auth = require '../lib/auth'
+auth = (require '../lib/auth') true
 config = require '../config'
 
-db = monk config.db
-users = db.get 'users'
 
+User = mongoose.model 'User'
 router = do require 'koa-router'
 
 bcryptCompare = Q.nbind bcrypt.compare, bcrypt
@@ -17,8 +16,8 @@ jwtVerify = Q.nbind jwt.verify, jwt
 
 
 router.post '/', (next)->
-    doc = yield users.findOne username: @request.body.username
-    console.log doc
+    q = User.findOne username: @request.body.username
+    doc = yield q.exec()
     if not doc
         @throw 401
         return
