@@ -1,8 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "start": "pm2 start bootstrap.js --watch --node-args \"--harmony\" --name a2ms-api",
-    "up": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api"
+    "start": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api --watch",
+    "prod": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api",
+    "stop": "pm2 stop a2ms-api"
   },
   "dependencies": {
     "bcrypt": "^0.8.5",
