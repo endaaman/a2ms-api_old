@@ -17,17 +17,13 @@ router.get '/', user, (next)->
     if not @user?.approved
         query.draft = false
 
-
     if @query.category
         if @query.category is 'null'
             query.category = null
         else
             query.category = @query.category
 
-    if @query.hasOwnProperty 'with_content'
-        fields = ''
-    else
-        fields = '-content_ja -content_en'
+    fields = '-content_ja -content_en'
 
     opt =
         created_at: -1
