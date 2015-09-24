@@ -34,4 +34,12 @@ router.delete '/:filename', auth, (next)->
     yield next
 
 
+router.post '/rename', auth, (next)->
+    oldPath = path.join config.uploadDir, @request.body.filename
+    newPath = path.join config.uploadDir, @request.body.new_filename
+    yield fs.rename oldPath, newPath
+    @status = 204
+    yield next
+
+
 module.exports = router.routes()
