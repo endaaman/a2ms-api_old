@@ -1,6 +1,8 @@
 a2ms-api:
-  build: /var/www/a2ms-api
+  build: .
   net: 'host'
+  ports:
+    - 3000:3000
   volumes:
     - /var/uploaded/a2ms:/var/uploaded/a2ms
   restart: always
