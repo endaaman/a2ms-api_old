@@ -1,37 +1,27 @@
 _ = require 'lodash'
 mongoose = require 'mongoose'
 
-auth = (require '../lib/auth') true
-user = (require '../lib/auth') false
+auth = require '../lib/auth'
 config = require '../config'
 
 Article = mongoose.model 'Article'
+Category = mongoose.model 'Category'
+News = mongoose.model 'News'
 
 router = do require 'koa-router'
 
-router.get '/', user, (next)->
+router.get '/', (next)->
     query = {}
-    if @query.tag
-        query.tags = @query.tag
-
-    if not @user?.approved
+    if not @user
         query.draft = false
 
-    if @query.category
-        if @query.category is 'null'
-            query.category = null
-        else
-            query.category = @query.category
-
-    fields = '-content_ja -content_en'
+    # fields =
+    #     content_ja: false
+    #     content_en: false
+    fields = {}
 
     opt =
-        created_at: -1
-
-    if limit = Number @query.limit
-        opt.limit = limit
-    if skip = Number @query.skip
-        opt.skip = skip
+        sort: '-order created_at'
 
     q = Article.find query, fields, opt
     @body = yield q.exec()
@@ -40,18 +30,20 @@ router.get '/', user, (next)->
 
 router.post '/', auth, (next)->
     article = new Article @request.body
-    article.created_at = new Date
-    article.updated_at = article.created_at
-    try
-        @body = yield article.save()
-        @status = 201
-    catch err
-        @body = err
-        @status = 422
+    @body = yield article.save()
     yield next
 
+    # NOTE: お知らせの自動追加
+    # doc = yield Article.populate @body, path: 'category'
+    # base = if doc.category then doc.category.slug else '-'
+    # url = "/#{base}/#{doc.slug}"
+    # news = new News
+    #     message_ja: "記事「[#{doc.title_ja}](#{url})」を追加しました"
+    #     message_en: "Add entry \"[#{doc.title_en}](#{url})\""
+    # yield news.save()
 
-router.get '/:id', user, (next)->
+
+router.get '/:id', (next)->
     if /^[0-9a-fA-F]{24}$/.test @params.id
         doc = yield Article.findById @params.id
     else
@@ -74,19 +66,10 @@ router.patch '/:id', auth, (next)->
     if not doc
         @status = 404
         return
-    base = _.clone @request.body
-    delete base.created_at
-    base.updated_at = new Date
-    _.assign doc, base
+    _.assign doc, @request.body
 
-    try
-        @body = yield doc.save()
-        @status = 200
-    catch err
-        @body = err
-        @status = 422
+    @body = yield doc.save()
     yield next
-
 
 router.delete '/:id', auth, (next)->
     yield Article.findByIdAndRemove @params.id

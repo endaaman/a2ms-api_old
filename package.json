@@ -1,9 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "start": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api --watch",
-    "prod": "pm2 start bootstrap.js --node-args \"--harmony\" --name a2ms-api",
-    "stop": "pm2 stop a2ms-api"
+    "start": "pm2 start bootstrap.js --name a2ms-api --watch",
+    "up": "node bootstrap.js"
   },
   "dependencies": {
     "bcrypt": "^0.8.5",
@@ -13,19 +12,16 @@
     "coffee-script": "^1.10.0",
     "destroy": "^1.0.3",
     "fs-cp": "^1.3.1",
-    "jsonwebtoken": "^5.0.5",
+    "jsonwebtoken": "^6.2.0",
     "koa": "^1.0.0",
     "koa-bodyparser": "^2.0.1",
-    "koa-compose": "^2.3.0",
-    "koa-cors": "0.0.16",
     "koa-json": "^1.1.1",
     "koa-logger": "^1.3.0",
     "koa-response-time": "^1.0.2",
     "koa-router": "^5.1.2",
-    "lodash": "^3.10.1",
+    "koa-static": "^2.0.0",
+    "lodash": "^4.6.1",
     "mongoose": "^4.1.8",
-    "mongoose-relationship": "^0.1.4",
-    "q": "^1.4.1",
-    "spaseo.js": "^0.1.4"
+    "q": "^1.4.1"
   }
 }

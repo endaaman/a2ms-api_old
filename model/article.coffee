@@ -1,5 +1,4 @@
 mongoose = require 'mongoose'
-relationship = require 'mongoose-relationship'
 
 Schema = mongoose.Schema
 
@@ -12,27 +11,41 @@ module.exports = new Schema
     draft:
         type: Boolean
         required: true
+    order:
+        type: Number
+        required: true
+        default: 0
     title_ja:
         type: String
         required: true
     title_en:
         type: String
         required: true
-    content_ja:
+    image_url:
         type: String
-    content_en:
-        type: String
+        default: ''
     category:
         type: Schema.Types.ObjectId
         ref: 'Category'
-        childPath: 'articles'
-    tags: [
-        type: Schema.Types.ObjectId
-        ref: 'Tag'
-        childPath: 'articles'
-    ]
+        default: null
+    content_ja:
+        type: String
+        default: ''
+    content_en:
+        type: String
+        default: ''
+    comment:
+        type: String
+        default: ''
 
-    created_at: Date
-    updated_at: Date
+    created_at:
+        type: Date
+        default: Date.now
+    updated_at:
+        type: Date
+        default: Date.now
 
-.plugin relationship, relationshipPathName: ['category', 'tags']
+.pre 'validate', (next)->
+    if @category is ''
+        @category = null
+    next()

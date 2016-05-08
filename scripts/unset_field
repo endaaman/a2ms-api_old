@@ -1,0 +1,40 @@
+#!/usr/bin/env coffee
+
+co = require 'co'
+mongoose = require 'mongoose'
+config = require '../config'
+
+finalizer = ->
+  mongoose.disconnect()
+
+modelNames = ['article', 'category', 'user']
+
+modelName = process.argv[2]
+fieldName = process.argv[3]
+
+unless modelName in modelNames
+  console.warn 'Please specify correct model name'
+  process.exit 1
+
+unless fieldName
+  console.warn 'Please specify field name'
+  process.exit 1
+
+for n in modelNames
+  mongoose.model n, require "../model/#{modelName}"
+mongoose.connect config.db
+
+co ->
+  model = mongoose.model modelName
+  docs = yield model.find().exec()
+  for doc in docs
+    doc[fieldName] = undefined
+    console.log(yield doc.save())
+
+  console.log 'done'
+  finalizer()
+
+.catch (err)->
+  console.error err
+  finalizer()
+process.on 'SIGINT', finalizer

@@ -4,7 +4,7 @@ bcrypt = require 'bcrypt'
 jwt = require 'jsonwebtoken'
 mongoose = require 'mongoose'
 
-auth = (require '../lib/auth') true
+auth = require '../lib/auth'
 config = require '../config'
 
 
@@ -16,7 +16,8 @@ jwtVerify = Q.nbind jwt.verify, jwt
 
 
 router.post '/', (next)->
-    q = User.findOne username: @request.body.username
+    q = User
+        .findOne username: @request.body.username
     doc = yield q.exec()
     if not doc
         @throw 401
@@ -31,11 +32,10 @@ router.post '/', (next)->
         @throw 401
         return
 
-    user = _.pick doc, ['_id', 'username', 'approved']
-    token = jwt.sign _.clone(user), config.secret
+    token = jwt.sign (_id: doc._id), config.secret
     @body =
         token: token
-        user: user
+        user: _.pick doc, ['_id', 'username', 'approved', 'admin']
     @status = 201
     yield next
 

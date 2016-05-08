@@ -1,0 +1,34 @@
+#!/usr/bin/env coffee
+
+co = require 'co'
+mongoose = require 'mongoose'
+_ = require 'lodash'
+
+config = require '../config'
+
+finalizer = ->
+  mongoose.disconnect()
+
+modelNames = ['article', 'category', 'user']
+
+for modelName in modelNames
+  mongoose.model modelName, require "../model/#{modelName}"
+mongoose.connect config.db
+
+co ->
+  for modelName in modelNames
+    model = mongoose.model modelName
+    # keys = Object.keys model.schema.paths
+    docs = yield model.find().exec()
+    for doc in docs
+      delete doc.password
+      yield model.findByIdAndUpdate doc.id, doc
+
+  console.log 'done'
+  finalizer()
+
+.catch (err)->
+  console.error err
+  finalizer()
+
+process.on 'SIGINT', finalizer

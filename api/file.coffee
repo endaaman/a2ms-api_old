@@ -6,26 +6,48 @@ parse = require 'co-busboy'
 cp = require 'fs-cp'
 destroy = require 'destroy'
 
-auth = (require '../lib/auth') true
+auth = require '../lib/auth'
 config = require '../config'
 
 router = do require 'koa-router'
 
 
-router.get '/', (next)->
-    files = yield fs.readdir config.uploadDir
-    @body = files
+readStats = (filenames)->
+    results = []
+    for filename in filenames
+        if /^\./.test filename
+            continue
+        stat = yield fs.stat path.join config.uploadDir, filename
+        if stat.isFile()
+            results.push
+                name: filename
+                size: stat.size
+                atime: stat.atime
+                ctime: stat.ctime
+                mtime: stat.mtime
+
+    results
+
+
+router.get '/', auth, (next)->
+    filenames = yield fs.readdir config.uploadDir
+    files = yield readStats filenames
+    @body = yield readStats filenames
+
     yield next
 
 
 router.post '/', auth, (next)->
     parts = parse this,
         autoFields: true
+    filenames = []
     while part = yield parts
-        filepath = path.join config.uploadDir, part.filename
-        yield cp part, filepath
+        # NOTE: transform filename to lower case
+        filename = part.filename.toLowerCase()
+        filenames.push filename
+        yield cp part, path.join config.uploadDir, filename
 
-    @status = 204
+    @body = yield readStats filenames
     yield next
 
 router.delete '/:filename', auth, (next)->
@@ -35,10 +57,13 @@ router.delete '/:filename', auth, (next)->
 
 
 router.post '/rename', auth, (next)->
-    oldPath = path.join config.uploadDir, @request.body.filename
-    newPath = path.join config.uploadDir, @request.body.new_filename
+    # NOTE: transform to lower case
+    newName = @request.body.newName.toLowerCase()
+    oldPath = path.join config.uploadDir, @request.body.oldName
+    newPath = path.join config.uploadDir, newName
     yield fs.rename oldPath, newPath
-    @status = 204
+
+    @body = (yield readStats [newName])[0]
     yield next
 
 

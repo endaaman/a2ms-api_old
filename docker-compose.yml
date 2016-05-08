@@ -1,0 +1,6 @@
+a2ms-api:
+  build: /var/www/a2ms-api
+  net: 'host'
+  volumes:
+    - /var/uploaded/a2ms:/var/uploaded/a2ms
+  restart: always
