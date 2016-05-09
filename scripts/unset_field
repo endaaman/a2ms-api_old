@@ -29,7 +29,7 @@ co ->
   docs = yield model.find().exec()
   for doc in docs
     doc[fieldName] = undefined
-    console.log(yield doc.save())
+    yield doc.save()
 
   console.log 'done'
   finalizer()
